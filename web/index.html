@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Devis Travaux Assistant</title>
+<style>
+  :root { --bg:#f6f7f5; --panel:#fff; --text:#1f2421; --muted:#5f6a63; --line:#dfe4e0;
+          --accent:#2f6b4f; --accent-soft:#e6f0ea; --warn:#9a5b00; --warn-soft:#fff4e0; --err:#b3261e; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141716; --panel:#1c201e; --text:#e7ebe8; --muted:#9aa5a0; --line:#2d3430;
+            --accent:#7cc4a0; --accent-soft:#203329; --warn:#e3a64b; --warn-soft:#33281a; --err:#ff7b72; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:17px; } header p { margin:2px 0 0; color:var(--muted); font-size:13px; }
+  main { display:grid; grid-template-columns:minmax(300px,420px) 1fr; gap:16px; padding:16px; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; min-width:0; }
+  textarea { width:100%; min-height:260px; padding:10px; border-radius:8px; border:1px solid var(--line);
+             background:var(--bg); color:var(--text); font:inherit; resize:vertical; }
+  button { font:inherit; border:1px solid var(--line); background:var(--bg); color:var(--text);
+           border-radius:7px; padding:6px 11px; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  .muted { color:var(--muted); font-size:12.5px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { padding:6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  td.num, th.num { text-align:right; white-space:nowrap; }
+  tr.lot td { background:var(--accent-soft); font-weight:600; }
+  input.qte { width:70px; padding:3px 5px; border:1px solid var(--line); border-radius:5px;
+              background:var(--bg); color:var(--text); font:inherit; text-align:right; }
+  .hyp { color:var(--muted); font-size:12px; }
+  .totaux { margin-top:10px; margin-left:auto; max-width:320px; }
+  .totaux td { border:none; padding:3px 6px; } .totaux tr.ttc td { font-weight:700; border-top:1px solid var(--line); }
+  .box { margin-top:12px; padding:10px; border-radius:8px; background:var(--warn-soft); }
+  .box h3 { margin:0 0 6px; font-size:13px; color:var(--warn); } .box ul { margin:0; padding-left:18px; }
+  .error { color:var(--err); }
+  .scroll { overflow-x:auto; }
+  @media print { header, .panel.input, .row.actions { display:none !important; } main { display:block; padding:0; }
+                 .panel { border:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Devis Travaux Assistant</h1>
+  <p>Notes de visite → lignes proposées par le LLM → chiffrage déterministe avec la bibliothèque de prix. Le LLM ne fixe aucun prix.</p>
+</header>
+<main>
+  <section class="panel input">
+    <label for="notes"><b>Notes de visite</b></label>
+    <textarea id="notes"></textarea>
+    <div class="row">
+      <button class="primary" id="go">Générer le devis</button>
+      <button id="demo" title="Charge une proposition enregistrée : fonctionne sans LLM">Exemple sans LLM</button>
+    </div>
+    <p class="muted">Prix indicatifs de démonstration, à remplacer par la bibliothèque de prix du pôle travaux.</p>
+  </section>
+
+  <section class="panel">
+    <div class="row actions" style="margin-top:0">
+      <b style="margin-right:auto">Devis</b>
+      <button id="csv" disabled>Export CSV</button>
+      <button id="print" disabled>Imprimer / PDF</button>
+    </div>
+    <div id="out" class="muted" style="margin-top:10px">Collez des notes de visite ou chargez l'exemple.</div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const eur = (x) => x.toLocaleString("fr-FR", {style: "currency", currency: "EUR"});
+let proposition = null;
+
+async function post(path, body, asText) {
+  const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || r.statusText); }
+  return asText ? r.text() : r.json();
+}
+
+function render(devis) {
+  const byLot = {};
+  devis.lignes.forEach((l) => (byLot[l.lot] ||= []).push({...l, i: l.source_index}));
+  let rows = "";
+  for (const [lot, lignes] of Object.entries(byLot)) {
+    rows += `<tr class="lot"><td colspan="5">${esc(lot)}</td><td class="num">${eur(devis.sous_totaux_par_lot[lot])}</td></tr>`;
+    for (const l of lignes) {
+      rows += `<tr><td>${esc(l.piece)}</td><td>${esc(l.libelle)}${l.hypothese ? `<div class="hyp">${esc(l.hypothese)}</div>` : ""}</td>
+        <td class="num"><input class="qte" data-i="${l.i}" type="number" min="0" step="0.5" value="${l.quantite}"></td>
+        <td>${esc(l.unite)}</td><td class="num">${eur(l.prix_unitaire_ht)}</td><td class="num">${eur(l.total_ht)}</td></tr>`;
+    }
+  }
+  const tva = Object.entries(devis.tva_par_taux).map(([t, m]) => `<tr><td>TVA ${t.replace(".", ",")} %</td><td class="num">${eur(m)}</td></tr>`).join("");
+  const list = (title, items) => items.length ? `<div class="box"><h3>${title}</h3><ul>${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "";
+  $("out").className = "";
+  $("out").innerHTML = `<div class="scroll"><table><thead><tr><th>Pièce</th><th>Désignation</th><th class="num">Qté</th><th>Unité</th><th class="num">PU HT</th><th class="num">Total HT</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <table class="totaux"><tr><td>Total HT</td><td class="num">${eur(devis.total_ht)}</td></tr>${tva}<tr class="ttc"><td>Total TTC</td><td class="num">${eur(devis.total_ttc)}</td></tr></table>
+    ${list("À chiffrer manuellement", devis.a_chiffrer_manuellement.map((a) => a.description + (a.raison ? ` — ${a.raison}` : "")))}
+    ${list("Questions à poser", devis.questions_a_poser)}
+    ${list("Points de contrôle", devis.alertes)}`;
+  document.querySelectorAll("input.qte").forEach((inp) => inp.onchange = recompute);
+  $("csv").disabled = $("print").disabled = false;
+}
+
+async function recompute(e) {
+  // Modification humaine d'une quantité : recalcul instantané, sans LLM.
+  proposition.lignes[+e.target.dataset.i].quantite = +e.target.value;
+  render(await post("/chiffrer", proposition));
+}
+
+$("go").onclick = async () => {
+  const notes = $("notes").value.trim(); if (!notes) return;
+  $("go").disabled = true; $("out").className = "muted"; $("out").textContent = "Analyse des notes…";
+  try { const r = await post("/devis", {notes}); proposition = r.proposition; render(r.devis); }
+  catch (e) { $("out").innerHTML = `<span class="error">${esc(e.message)}</span>`; }
+  finally { $("go").disabled = false; }
+};
+
+$("demo").onclick = async () => {
+  $("notes").value = await (await fetch("/static/notes_t2.txt")).text();
+  proposition = await (await fetch("/static/proposition_t2.json")).json();
+  render(await post("/chiffrer", proposition));
+};
+
+$("csv").onclick = async () => {
+  const txt = await post("/devis.csv", proposition, true);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + txt], {type: "text/csv"})); a.download = "devis.csv"; a.click();
+};
+$("print").onclick = () => window.print();
+
+fetch("/static/notes_t2.txt").then((r) => r.text()).then((t) => $("notes").value = t);
+</script>
+</body>
+</html>

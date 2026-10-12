@@ -1,0 +1,32 @@
+{
+  "lignes": [
+    {"code": "DEP-SOL", "piece": "Séjour", "quantite": 20, "hypothese": "dépose de la moquette, 4 m x 5 m"},
+    {"code": "SOL-STRAT", "piece": "Séjour", "quantite": 20, "hypothese": "surface au sol 4 m x 5 m"},
+    {"code": "PLINTHE", "piece": "Séjour", "quantite": 18, "hypothese": "périmètre 2 x (4 + 5) = 18 ml"},
+    {"code": "PEINT-MUR", "piece": "Séjour", "quantite": 45, "hypothese": "périmètre 18 ml x 2,50 m = 45 m2 (ouvertures non déduites)"},
+    {"code": "PEINT-PLAF", "piece": "Séjour", "quantite": 20, "hypothese": "4 m x 5 m"},
+    {"code": "PEINT-MUR", "piece": "Chambre", "quantite": 35, "hypothese": "périmètre 2 x (3 + 4) = 14 ml x 2,50 m = 35 m2"},
+    {"code": "PEINT-PLAF", "piece": "Chambre", "quantite": 12, "hypothese": "3 m x 4 m"},
+    {"code": "PRISE", "piece": "Chambre", "quantite": 2, "hypothese": ""},
+    {"code": "INTER", "piece": "Chambre", "quantite": 1, "hypothese": ""},
+    {"code": "DEP-CUIS", "piece": "Cuisine", "quantite": 1, "hypothese": ""},
+    {"code": "CUISINE", "piece": "Cuisine", "quantite": 3, "hypothese": "3 ml indiqués"},
+    {"code": "CREDENCE", "piece": "Cuisine", "quantite": 3, "hypothese": "même linéaire que la cuisine"},
+    {"code": "DOUCHE", "piece": "Salle de bain", "quantite": 1, "hypothese": "remplacement de la baignoire"},
+    {"code": "VASQUE", "piece": "Salle de bain", "quantite": 1, "hypothese": ""},
+    {"code": "FAIENCE", "piece": "Salle de bain", "quantite": 8, "hypothese": "environ 8 m2 selon les notes"},
+    {"code": "WC", "piece": "Salle de bain", "quantite": 1, "hypothese": ""},
+    {"code": "TABLEAU", "piece": "Logement", "quantite": 1, "hypothese": ""},
+    {"code": "VMC", "piece": "Logement", "quantite": 1, "hypothese": ""},
+    {"code": "EVAC", "piece": "Logement", "quantite": 1, "hypothese": ""},
+    {"code": "NETTOYAGE", "piece": "Logement", "quantite": 1, "hypothese": ""}
+  ],
+  "a_chiffrer": [
+    {"description": "Porte de placard coulissante dans l'entrée", "raison": "aucun code correspondant dans la bibliothèque"},
+    {"description": "Dépose de la baignoire", "raison": "aucun code de dépose sanitaire dans la bibliothèque"}
+  ],
+  "questions": [
+    "Largeur de la porte de placard coulissante de l'entrée ?",
+    "Faut-il déduire les ouvertures (fenêtres, portes) des surfaces de peinture ?"
+  ]
+}

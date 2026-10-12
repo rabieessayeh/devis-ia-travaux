@@ -1,0 +1,28 @@
+code,lot,libelle,unite,prix_unitaire_ht,tva
+DEP-SOL,Démolition,Dépose de revêtement de sol existant,m2,12.00,10
+DEP-CUIS,Démolition,Dépose de cuisine existante,forfait,350.00,10
+EVAC,Démolition,Évacuation des gravats en déchetterie,forfait,280.00,10
+ENDUIT,Peinture,Rebouchage et enduit de lissage des murs,m2,9.00,10
+PEINT-MUR,Peinture,Peinture murs (2 couches),m2,18.00,10
+PEINT-PLAF,Peinture,Peinture plafonds (2 couches),m2,22.00,10
+SOL-STRAT,Sols,Fourniture et pose de parquet stratifié,m2,42.00,10
+SOL-VINYLE,Sols,Fourniture et pose de sol vinyle,m2,38.00,10
+SOL-CARR,Sols,Fourniture et pose de carrelage sol,m2,65.00,10
+PLINTHE,Sols,Fourniture et pose de plinthes,ml,11.00,10
+FAIENCE,Salle de bain,Fourniture et pose de faïence murale,m2,70.00,10
+DOUCHE,Salle de bain,Receveur de douche + paroi + colonne,u,1150.00,10
+VASQUE,Salle de bain,Meuble vasque avec mitigeur,u,520.00,10
+WC,Salle de bain,Remplacement WC (fourniture et pose),u,380.00,10
+CUISINE,Cuisine,Fourniture et pose de cuisine équipée,ml,650.00,10
+CREDENCE,Cuisine,Crédence murale,ml,85.00,10
+PRISE,Électricité,Remplacement de prise de courant,u,45.00,10
+INTER,Électricité,Remplacement d'interrupteur,u,40.00,10
+LUMINAIRE,Électricité,Création de point lumineux,u,95.00,10
+TABLEAU,Électricité,Remplacement du tableau électrique,u,950.00,10
+RADIATEUR,Chauffage,Radiateur électrique à inertie (fourniture et pose),u,480.00,10
+BALLON,Plomberie,Remplacement du chauffe-eau électrique,u,890.00,10
+PORTE,Menuiserie,Fourniture et pose de porte intérieure,u,260.00,10
+CLOISON,Menuiserie,Cloison en plaque de plâtre,m2,55.00,10
+ISOL-COMBLES,Isolation,Isolation des combles perdus,m2,28.00,5.5
+VMC,Ventilation,Installation d'une VMC simple flux,u,620.00,5.5
+NETTOYAGE,Finitions,Nettoyage de fin de chantier,forfait,180.00,10

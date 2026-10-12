@@ -1,0 +1,37 @@
+{
+  "name": "Notes de visite -> Devis (Devis Travaux Assistant)",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "POST", "path": "devis", "responseMode": "responseNode", "options": {}},
+      "name": "Webhook notes de visite",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DEVIS_API_URL }}/devis",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ notes: $json.body.notes }) }}",
+        "options": {"timeout": 60000}
+      },
+      "name": "Chiffrer le devis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {"respondWith": "json", "responseBody": "={{ $json.devis }}", "options": {}},
+      "name": "Répondre",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [520, 0]
+    }
+  ],
+  "connections": {
+    "Webhook notes de visite": {"main": [[{"node": "Chiffrer le devis", "type": "main", "index": 0}]]},
+    "Chiffrer le devis": {"main": [[{"node": "Répondre", "type": "main", "index": 0}]]}
+  }
+}
