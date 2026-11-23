@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 
-from app.devis import chiffrer, load_catalogue, to_csv
+from devis_travaux.catalogue import load_catalogue
+from devis_travaux.chiffrage import chiffrer
+from devis_travaux.export import to_csv
 
 CAT = load_catalogue()
 EX = json.loads((Path(__file__).resolve().parents[1] / "examples" / "proposition_t2.json").read_text())

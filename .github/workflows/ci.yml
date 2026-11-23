@@ -15,4 +15,3 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: ruff check .
       - run: pytest -q
-      - run: docker build -t devis-travaux-assistant .

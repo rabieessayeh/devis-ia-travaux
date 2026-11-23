@@ -8,12 +8,12 @@ Fonctionne avec toute API compatible OpenAI (Groq, OpenAI, Mistral, Ollama...).
 from __future__ import annotations
 
 import json
-import os
 import time
 
 from openai import OpenAI, RateLimitError
 
-from .devis import Article, catalogue_for_prompt
+from . import llm
+from .catalogue import Article, catalogue_for_prompt
 
 SYSTEM = """Tu es l'assistant du pôle travaux d'une société d'investissement locatif.
 À partir des notes de visite d'un conducteur de travaux, tu proposes les lignes d'un devis.
@@ -58,16 +58,11 @@ TOOL = {
 }
 
 
-def _client() -> OpenAI:
-    return OpenAI(base_url=os.getenv("LLM_BASE_URL", "http://localhost:11434/v1"),
-                  api_key=os.getenv("LLM_API_KEY", "ollama"))
-
-
 def extraire(notes: str, cat: dict[str, Article], client: OpenAI | None = None) -> dict:
     """Retourne {'lignes': [...], 'a_chiffrer': [...], 'questions': [...]}."""
-    client = client or _client()
+    client = client or llm.client()
     kwargs = dict(
-        model=os.getenv("LLM_MODEL", "openai/gpt-oss-20b"),
+        model=llm.get("LLM_MODEL"),
         temperature=0,
         messages=[{"role": "system", "content": SYSTEM.format(catalogue=catalogue_for_prompt(cat))},
                   {"role": "user", "content": notes}],

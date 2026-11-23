@@ -20,7 +20,7 @@ au lieu d'être deviné.
    à poser* ; doublons, forfait compté plusieurs fois, quantité non entière → *points de contrôle*.
 4. **Relecture humaine** : chaque quantité est modifiable dans l'interface, le devis se recalcule
    instantanément sans rappeler le LLM.
-5. **Export** CSV (Excel / Google Sheets) et impression PDF.
+5. **Export** CSV (Excel / Google Sheets).
 
 Le bouton **« Exemple sans LLM »** charge une proposition enregistrée : la démo fonctionne même
 sans clé API.
@@ -31,47 +31,55 @@ sans clé API.
   bibliothèque de prix et chaque total est testé.
 - **Adoption** : le conducteur de travaux garde la main (quantités modifiables, hypothèses visibles,
   questions listées).
-- **Intégration** : `POST /chiffrer` fonctionne sans LLM (lignes déjà structurées) et
-  `POST /devis` prend les notes brutes ; les deux s'appellent depuis **n8n**, Coda ou un script.
-  Un modèle de workflow n8n est fourni dans `n8n/workflow_devis.json` (Webhook → API → réponse),
-  à importer et adapter (variable `DEVIS_API_URL`).
+- **Fournisseur libre** : toute API compatible OpenAI (Groq, OpenAI, Mistral, Ollama local).
 
-## API
+## Installation
 
-| Route | Rôle |
-|---|---|
-| `POST /devis` | `{"notes": "..."}` → proposition du LLM + devis chiffré |
-| `POST /chiffrer` | lignes structurées → devis chiffré (sans LLM) |
-| `POST /devis.csv` | lignes structurées → CSV |
-| `GET /catalogue` | bibliothèque de prix |
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env            # ajouter la clé LLM_API_KEY
+```
+
+## Utilisation
+
+```bash
+streamlit run app.py            # http://localhost:8501
+```
+
+Sans clé, le bouton *Exemple sans LLM* fonctionne quand même.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q                       # tests hors ligne (faux client LLM)
+ruff check .
+```
 
 ## Déployer sur Streamlit Community Cloud
 
 1. Pousser le dépôt sur GitHub.
-2. Sur [share.streamlit.io](https://share.streamlit.io) : **Create app** → choisir le dépôt,
-   branche `main`, fichier principal **`streamlit_app.py`**, URL personnalisée
-   (ex. `devis-travaux.streamlit.app`). Dans *Advanced settings*, Python **3.12**.
+2. Sur [share.streamlit.io](https://share.streamlit.io) : **Create app** → dépôt, branche `main`,
+   fichier principal **`app.py`**. Dans *Advanced settings* : Python **3.12**.
 3. Dans *Advanced settings → Secrets*, coller le contenu de `.streamlit/secrets.toml.example`
-   avec la vraie clé (`LLM_API_KEY`). Sans clé, l'app fonctionne avec le bouton *Exemple sans LLM*.
+   avec la vraie clé.
 
-`requirements.txt` ne contient que les dépendances de l'app Streamlit (installation rapide) ;
-l'API FastAPI utilise `requirements-api.txt`.
+## Structure
 
-En local : `pip install -r requirements.txt && streamlit run streamlit_app.py`
-(clé dans `.streamlit/secrets.toml` ou dans les variables d'environnement).
-
-## Lancer l'API en local
-
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-cp .env.example .env            # ajouter la clé (Groq, OpenAI, Mistral ou Ollama local)
-set -a && source .env && set +a
-uvicorn app.api:app --reload    # http://127.0.0.1:8000
-pytest -q                       # 12 tests hors ligne (faux client LLM)
 ```
-
-Docker : `docker build -t devis-travaux-assistant . && docker run -p 8000:8000 --env-file .env devis-travaux-assistant`
+app.py                       interface Streamlit (seul point d'entrée)
+devis_travaux/
+  catalogue.py               bibliothèque de prix (chargement, version sans prix pour le LLM)
+  chiffrage.py               chiffrage déterministe : prix, TVA, totaux, contrôles
+  export.py                  export CSV
+  llm.py                     configuration (.env / secrets Streamlit) et client LLM
+  extraction.py              notes de visite -> lignes proposées (outil forcé)
+data/bibliotheque_prix.csv   prix unitaires HT et taux de TVA
+examples/                    notes de visite et proposition d'exemple (T2)
+tests/                       chiffrage, extraction (faux LLM), interface (AppTest)
+.streamlit/                  thème et modèle de secrets
+```
 
 ## Limites
 

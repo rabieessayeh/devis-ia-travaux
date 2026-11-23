@@ -1,9 +1,10 @@
 [theme]
-primaryColor = "#c2410c"
 base = "light"
-
-[server]
-runOnSave = false
+primaryColor = "#c2410c"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f5f3f0"
+textColor = "#1f2933"
+font = "sans-serif"
 
 [browser]
 gatherUsageStats = false

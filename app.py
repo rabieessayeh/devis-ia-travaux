@@ -1,47 +1,40 @@
 """Interface Streamlit : notes de visite -> devis chiffré.
 
-Point d'entrée pour Streamlit Community Cloud (share.streamlit.io) :
-    streamlit run streamlit_app.py
+Usage :
+    streamlit run app.py
 
-La clé LLM se configure dans les *Secrets* de l'app (voir .streamlit/secrets.toml.example).
+Clé LLM : fichier .env en local, ou *Secrets* de l'app sur Streamlit Community Cloud
+(voir .env.example et .streamlit/secrets.toml.example).
 """
 
 from __future__ import annotations
 
 import json
 import math
-import os
 import time
 from collections import defaultdict, deque
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-from app.devis import chiffrer, load_catalogue, to_csv
+from devis_travaux import EXAMPLES_DIR, llm
+from devis_travaux.catalogue import load_catalogue
+from devis_travaux.chiffrage import chiffrer
+from devis_travaux.export import to_csv
 
-ROOT = Path(__file__).resolve().parent
-EXAMPLES = ROOT / "examples"
-LLM_VARS = ("LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "RATE_LIMIT_PER_HOUR")
+GITHUB_URL = "https://github.com/rabieessayeh/devis-ia-travaux"
 
 st.set_page_config(page_title="Devis Travaux Assistant", page_icon="🧱", layout="wide")
 
 
-# --- Configuration : secrets Streamlit -> variables d'environnement lues par app.extract ------------
-def _load_secrets() -> None:
-    try:
-        secrets = dict(st.secrets)
-    except Exception:  # noqa: BLE001  (aucun secrets.toml en local)
-        return
-    for key in LLM_VARS:
-        if key in secrets and not os.getenv(key):
-            os.environ[key] = str(secrets[key])
-    os.environ.setdefault("LLM_BASE_URL", "https://api.groq.com/openai/v1")
-
-
-_load_secrets()
-LLM_OK = bool(os.getenv("LLM_API_KEY"))
-RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_HOUR", "30"))
+# --- Configuration : .env (local) ou secrets Streamlit (Cloud) ------------------------------------
+try:
+    _secrets = dict(st.secrets)
+except Exception:  # noqa: BLE001  (aucun secrets.toml)
+    _secrets = {}
+llm.load_config(_secrets)
+LLM_OK = llm.is_configured()
+RATE_LIMIT = int(llm.get("RATE_LIMIT_PER_HOUR"))
 
 
 # --- Ressources mises en cache (une seule fois par processus) -------------------------------------
@@ -52,8 +45,8 @@ def catalogue() -> dict:
 
 @st.cache_data
 def exemple() -> tuple[str, dict]:
-    notes = (EXAMPLES / "notes_t2.txt").read_text(encoding="utf-8")
-    prop = json.loads((EXAMPLES / "proposition_t2.json").read_text(encoding="utf-8"))
+    notes = (EXAMPLES_DIR / "notes_t2.txt").read_text(encoding="utf-8")
+    prop = json.loads((EXAMPLES_DIR / "proposition_t2.json").read_text(encoding="utf-8"))
     return notes, prop
 
 
@@ -98,7 +91,8 @@ def _charger_exemple() -> None:
 # --- Interface ------------------------------------------------------------------------------------
 st.title("Devis Travaux Assistant")
 st.caption("Notes de visite en texte libre → devis chiffré. Le LLM propose les lignes ; "
-           "**les prix, la TVA et les totaux sont calculés par du code déterministe**.")
+           "**les prix, la TVA et les totaux sont calculés par du code déterministe**. "
+           f"[Code source]({GITHUB_URL})")
 
 with st.sidebar:
     st.subheader("Bibliothèque de prix")
@@ -108,7 +102,7 @@ with st.sidebar:
                        "PU HT": float(a.prix_unitaire_ht), "TVA %": float(a.tva)} for a in CAT.values()]),
         hide_index=True, height=420,
     )
-    st.caption(f"Modèle : `{os.getenv('LLM_MODEL', 'openai/gpt-oss-20b')}`" if LLM_OK
+    st.caption(f"Modèle : `{llm.get('LLM_MODEL')}`" if LLM_OK
                else "Aucune clé LLM configurée : seul l'exemple est disponible.")
 
 col_in, col_out = st.columns([2, 3], gap="large")
@@ -129,7 +123,7 @@ with col_in:
         elif not _rate_ok():
             st.error("Limite horaire atteinte, réessayez plus tard.")
         else:
-            from app.extract import extraire
+            from devis_travaux.extraction import extraire
 
             with st.spinner("Lecture des notes par le modèle…"):
                 try:

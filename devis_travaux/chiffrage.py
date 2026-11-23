@@ -8,44 +8,15 @@ signalée au lieu d'être devinée.
 
 from __future__ import annotations
 
-import csv
-import io
-from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
-from pathlib import Path
 
-DATA = Path(__file__).resolve().parents[1] / "data" / "bibliotheque_prix.csv"
+from .catalogue import Article
+
 CENT = Decimal("0.01")
 
 
 def _money(x: Decimal) -> Decimal:
     return x.quantize(CENT, rounding=ROUND_HALF_UP)
-
-
-@dataclass(frozen=True)
-class Article:
-    code: str
-    lot: str
-    libelle: str
-    unite: str
-    prix_unitaire_ht: Decimal
-    tva: Decimal  # en %
-
-
-def load_catalogue(path: Path = DATA) -> dict[str, Article]:
-    with open(path, encoding="utf-8") as f:
-        return {
-            row["code"]: Article(
-                code=row["code"], lot=row["lot"], libelle=row["libelle"], unite=row["unite"],
-                prix_unitaire_ht=Decimal(row["prix_unitaire_ht"]), tva=Decimal(row["tva"]),
-            )
-            for row in csv.DictReader(f)
-        }
-
-
-def catalogue_for_prompt(cat: dict[str, Article]) -> str:
-    """Liste compacte envoyée au LLM : codes, libellés et unités (pas les prix)."""
-    return "\n".join(f"{a.code} | {a.lot} | {a.libelle} | {a.unite}" for a in cat.values())
 
 
 def chiffrer(lignes: list[dict], cat: dict[str, Article], a_chiffrer: list[dict] | None = None,
@@ -116,18 +87,3 @@ def chiffrer(lignes: list[dict], cat: dict[str, Article], a_chiffrer: list[dict]
         "questions_a_poser": list(questions or []),
         "alertes": alertes,
     }
-
-
-def to_csv(devis: dict) -> str:
-    out = io.StringIO()
-    w = csv.writer(out, delimiter=";")
-    w.writerow(["Lot", "Pièce", "Code", "Désignation", "Quantité", "Unité", "PU HT", "TVA %", "Total HT"])
-    for ln in devis["lignes"]:
-        w.writerow([ln["lot"], ln["piece"], ln["code"], ln["libelle"], ln["quantite"], ln["unite"],
-                    f"{ln['prix_unitaire_ht']:.2f}", ln["tva"], f"{ln['total_ht']:.2f}"])
-    w.writerow([])
-    w.writerow(["", "", "", "Total HT", "", "", "", "", f"{devis['total_ht']:.2f}"])
-    for taux, montant in devis["tva_par_taux"].items():
-        w.writerow(["", "", "", f"TVA {taux} %", "", "", "", "", f"{montant:.2f}"])
-    w.writerow(["", "", "", "Total TTC", "", "", "", "", f"{devis['total_ttc']:.2f}"])
-    return out.getvalue()
