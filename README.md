@@ -45,7 +45,22 @@ sans clé API.
 | `POST /devis.csv` | lignes structurées → CSV |
 | `GET /catalogue` | bibliothèque de prix |
 
-## Lancer en local
+## Déployer sur Streamlit Community Cloud
+
+1. Pousser le dépôt sur GitHub.
+2. Sur [share.streamlit.io](https://share.streamlit.io) : **Create app** → choisir le dépôt,
+   branche `main`, fichier principal **`streamlit_app.py`**, URL personnalisée
+   (ex. `devis-travaux.streamlit.app`). Dans *Advanced settings*, Python **3.12**.
+3. Dans *Advanced settings → Secrets*, coller le contenu de `.streamlit/secrets.toml.example`
+   avec la vraie clé (`LLM_API_KEY`). Sans clé, l'app fonctionne avec le bouton *Exemple sans LLM*.
+
+`requirements.txt` ne contient que les dépendances de l'app Streamlit (installation rapide) ;
+l'API FastAPI utilise `requirements-api.txt`.
+
+En local : `pip install -r requirements.txt && streamlit run streamlit_app.py`
+(clé dans `.streamlit/secrets.toml` ou dans les variables d'environnement).
+
+## Lancer l'API en local
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -53,7 +68,7 @@ pip install -r requirements-dev.txt
 cp .env.example .env            # ajouter la clé (Groq, OpenAI, Mistral ou Ollama local)
 set -a && source .env && set +a
 uvicorn app.api:app --reload    # http://127.0.0.1:8000
-pytest -q                       # 11 tests hors ligne (faux client LLM)
+pytest -q                       # 12 tests hors ligne (faux client LLM)
 ```
 
 Docker : `docker build -t devis-travaux-assistant . && docker run -p 8000:8000 --env-file .env devis-travaux-assistant`

@@ -1,0 +1,5 @@
+# Dépendances de l'API FastAPI (Docker / n8n)
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.6
+openai>=1.30

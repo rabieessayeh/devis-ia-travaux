@@ -1,0 +1,9 @@
+[theme]
+primaryColor = "#c2410c"
+base = "light"
+
+[server]
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
